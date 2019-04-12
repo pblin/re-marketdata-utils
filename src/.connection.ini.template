@@ -1,0 +1,22 @@
+[graphql]
+apitoken=${graphql token}
+endpoint=${grapql api endpoint}
+
+[rebloc]
+endpoint=${replace api endpoint}
+registeremail=${register client email}
+
+[ipfs]
+endpoint=${ipfs api endpoint}
+port=5001
+
+[postgresql]
+user=
+password=
+host=${connection str}
+port=5432
+database=
+sslmode=require
+sslrootcert=/path/to/cert
+
+
