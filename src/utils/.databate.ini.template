@@ -1,0 +1,8 @@
+[postgresql]
+user=xxx@sql
+password=
+host=connection_url
+port=5432
+database=data
+sslmode=require
+sslrootcert=/path/to/root.crt

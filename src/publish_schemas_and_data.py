@@ -337,7 +337,7 @@ def main (args):
                 "search_terms": search_terms,
                 "price_high": default_price,
                 "price_low": 0.5,
-                "stage": 1,
+                "stage": 3,
                 "json_schema": json.dumps(schema)
             }
 
