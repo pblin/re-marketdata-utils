@@ -14,6 +14,7 @@ import gzip
 import os, random, struct
 from Crypto.Cipher import AES
 import ipfsApi
+import certifi
 from essential_generators import DocumentGenerator
 
 class ReblocMarketplace:
@@ -23,7 +24,9 @@ class ReblocMarketplace:
 
     def look_up_user_id(self,email):
         userid = -1
-        req = requests.get(self.url + '/profile/' + email)
+        # s = requests.Session()
+        # s.verify = "./rebloc.io.cert.pem"
+        req = requests.get(self.url + '/profile/' + email, verify=False)
         print (req.content)
 
         if req.status_code == 200:
@@ -38,7 +41,8 @@ class ReblocMarketplace:
         print (dataset)
         result = None
         headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
-        req = requests.post(self.url+'/schema',data=dataset,headers=headers)
+
+        req = requests.post(self.url+'/schema',data=dataset,headers=headers,verify=False)
         print (req.status_code)
 
         if req.status_code == 200:
@@ -313,8 +317,8 @@ def main (args):
             default_ipfs_gateway = "http://demo-app.rebloc.io:8080/ipfs/"
             default_price = 1.0
 
-            if 0.05 * data_info['num_of_rows'] > default_price:
-                default_price = 0.05 * data_info['num_of_rows']
+            if 0.01 * data_info['num_of_rows'] > default_price:
+                default_price = round (0.01 * data_info['num_of_rows'],2)
 
             dataset = {
                 "id": str(uuid.uuid1()),
