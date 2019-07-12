@@ -13,14 +13,9 @@ for tableName in sheetNames:
     schemaJson =open (tableName + ".json", "w")
 
     print ("%s total rows -> " % tableName + str(sheet.nrows) )
-
-    schema =  {
-        'schema_name': tableName,
-        'fields': []
-    }
-
+    fields = []
     for i in range (1,sheet.nrows):
-        field = {"name": "", "type": "", "label":"","description": ""};
+        field = {"name": "", "type": "", "label":"","description": ""}
         if str(sheet.cell_value(i, 1)).find("_id") == -1:
             field["name"] = sheet.cell_value(i, 1)
             field["label"] = sheet.cell_value(i, 2)
@@ -29,7 +24,9 @@ for tableName in sheetNames:
             else:
                 field["type"] = "text"
             field["description"] = sheet.cell_value(i, 3).replace('\t',' ').replace ('"','U+0022').replace('\n',' ')
-            schema['fields'].append (field)
+            fields['fields'].append (field)
 
-    schemaJson.write (json.dumps(schema))
+    schemaJson.write (json.dumps(fields))
+    schemaJson.flush()
+    schemaJson.close()
 

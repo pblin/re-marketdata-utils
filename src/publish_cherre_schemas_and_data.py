@@ -14,7 +14,8 @@ import gzip
 import os, random, struct
 from Crypto.Cipher import AES
 import ipfsApi
-import certifi
+# import certifi
+from psycopg2.extras import Json
 from essential_generators import DocumentGenerator
 
 class ReblocMarketplace:
@@ -54,13 +55,13 @@ class ReblocMarketplace:
     def query_published_field(self,ds_id):
         field_name_query = \
             gql('''
-                   query get_fields_published ($dataset_id: String) {
-                        marketplace_source_of_field
-                            (where: { source_id: { _eq: $dataset_id} } 
-                          ) {
-                               field_name
-                         }
-                    }
+                   query datasets ($id: String ) {
+                        marketplace_data_source_detail 
+                                     ( where:{id:{ _eq: $id}} )
+                       {
+                           schema
+                       }
+                     }
                 ''')
 
         params = {
@@ -68,8 +69,8 @@ class ReblocMarketplace:
         }
         result = self.client.execute(field_name_query, variable_values=params)
         cols = []
-        for row in result['marketplace_source_of_field']:
-            cols.append(row['field_name'])
+        for row in result['marketplace_source_of_field']['schema']:
+            cols.append(row['name'])
         return cols
 
 
@@ -131,8 +132,8 @@ class CherreData:
 
         rows = cursor.fetchall()
         json_str = json.dumps(rows, indent=4, sort_keys=False, default=str)
-        result_file_name = "/tmp/%s.%s.gz" % (id, output)
-        out_file = gzip.open(result_file_name, "w")
+        result_file_name = "/tmp/%s-sample.%s.gz" % (id, output)
+        out_file = gzip.open(result_file_name, "wt")
 
         if output == 'csv':
             csv_writer = csv.DictWriter(out_file, fieldnames=cols)
@@ -140,7 +141,7 @@ class CherreData:
             for row in rows:
                 csv_writer.writerow(row)
         else:
-            out_file.write(json_str.encode('utf8'))
+            out_file.write(json_str)
 
         out_file.close()
         md5_hash = create_file_hash(result_file_name)
@@ -152,9 +153,9 @@ class CherreData:
 
         return { 'ipfs_hash': res['Hash'],'md5_file_hash': md5_hash }
 
-
-    def publish_all_data(self,table_name,cypher_key,ipfs_server,ipfs_port,cols=None,output='json'):
-        cursor = self.connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    # json format is not suitable for full dataset as the size could be millions of rows
+    def publish_all_data(self,table_name,cypher_key,ipfs_server,ipfs_port,cols=None):
+        cursor = self.connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor,name='large_dataset')
 
         if cols is None:
             # get all columns
@@ -167,20 +168,22 @@ class CherreData:
             print(limit_query.as_string(self.connection))
             cursor.execute(limit_query)
 
-        rows = cursor.fetchall()
+        result_file_name = "/tmp/%s.%s.gz" % (id, "csv")
+        out_file = gzip.open(result_file_name, "wt")
+        csv_writer = csv.DictWriter(out_file, fieldnames=cols)
+        csv_writer.writeheader()
 
-        json_str = json.dumps(rows, indent=4, sort_keys=False, default=str)
-        result_file_name = "/tmp/%s.%s.gz" % (id, output)
-        out_file = gzip.open(result_file_name, "w")
+        total_records = 0
+        while True:
+            rows = cursor.fetchmany(size=5000)
 
-        if output == 'csv':
-            csv_writer = csv.DictWriter(out_file, fieldnames=cols)
-            csv_writer.writeheader()
+            if not rows:
+                break
+            total_records += len(rows)
             for row in rows:
                 csv_writer.writerow(row)
-        else:
-            out_file.write(json_str.encode('utf8'))
 
+        cursor.close()
         out_file.close()
         md5_hash=create_file_hash(result_file_name)
 
@@ -190,7 +193,7 @@ class CherreData:
         api = ipfsApi.Client(ipfs_server, ipfs_port)
         res = api.add(enc_file_name)
 
-        return { 'ipfs_hash': res['Hash'],'md5_file_hash': md5_hash, 'num_of_rows': len(rows) }
+        return { 'ipfs_hash': res['Hash'],'md5_file_hash': md5_hash, 'num_of_rows': total_records }
 
 
 def create_file_hash(filename):
@@ -325,8 +328,9 @@ def main (args):
                 "name": dataset_name,
                 "table_name": table,
                 "description": " Data about " + dataset_name,
-                "country": "USA",
-                "state_province": "NEW YORK",
+                "country": "united states",
+                "city": "{new york}",
+                "state_province": "newy york",
                 "date_created": current_date_time,
                 "date_modified": current_date_time,
                 "dataset_owner_id": ownerid,
@@ -339,9 +343,11 @@ def main (args):
                 'data_hash': data_info['md5_file_hash'],
                 "num_of_records": data_info['num_of_rows'],
                 "search_terms": search_terms,
+                "topic": "{building}",
                 "price_high": default_price,
                 "price_low": 0.5,
                 "stage": 3,
+                "schema": Json(schema),
                 "json_schema": json.dumps(schema)
             }
 

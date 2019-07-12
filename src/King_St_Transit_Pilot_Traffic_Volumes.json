@@ -1,0 +1,20 @@
+{
+"name":"Toronto King St Transit Pilot_ Detailed Traffic & Pedestrian Volumes",
+"description": "Toronto King St Transit Pilot_ Detailed Traffic & Pedestrian Volumes",
+"city":"{toronto}",
+"state": "ontario",
+"country":"canada",
+"schema":
+[
+{"name":"aggregation_period", "type":"text","label":"aggregation period", "description":"Month of aggregation (or baseline)"},
+{"name":"int_id", "type":"text","label":"name of the intersection", "description":"name of the intersection"},
+{"name":"px", "type":"text","label":"ID of the traffic signal", "description":"ID of the traffic signal, can be joined to Traffic Signals Tabular"},
+{"name":"datetime_bin", "type":"timestamp without timezone","label":"ID of the traffic signal", "description":"ID of the traffic signal, can be joined to Traffic Signals Tabular"},
+{"name":"classification", "type":"text","label":"classification", "description":"Differentiates between Pedestrians, Light Vehicles, etc."},
+{"name":"leg", "type":"text","label":"leg", "description":"Cardinal direction of the approach. W for the western approach to the intersection."},
+{"name":"dir", "type":"text","label":"dir", "description":"Cardinal direction of the movement. EB for Eastbound traffic in the western approach to the intersection."},
+{"name":"volume", "type":"integer","label":"volume", "description":"Number of observed vehicles/persons of that classification during the specified time period." }
+],
+"file_path":"traffic_volumes_2018.csv.gz",
+"num_of_records": 4347
+}
