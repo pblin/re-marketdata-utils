@@ -1,23 +1,23 @@
-from gql import gql, Client
-from gql.transport.requests import RequestsHTTPTransport
-from configparser import ConfigParser
-import psycopg2
-from psycopg2 import sql
-from psycopg2 import extras
+import csv
+import datetime
+import gzip
+import hashlib
+import json
+import os
+import struct
 import sys
 import uuid
-import requests
-import json, csv
-import datetime
-import hashlib
-import gzip
-import os, random, struct
-from Crypto.Cipher import AES
+from configparser import ConfigParser
+
 import ipfsApi
+import requests
+from Crypto.Cipher import AES
 # import certifi
-from psycopg2.extras import Json
 from essential_generators import DocumentGenerator
+from gql import gql, Client
+from gql.transport.requests import RequestsHTTPTransport
 from sodapy import Socrata
+
 
 class ReblocMarketplace:
     def __init__(self,url,gq_client):
@@ -76,7 +76,7 @@ class ReblocMarketplace:
         return cols
 
 
-class NycOpenData:
+class MyOpenData:
     def __init__(self,client,metadata,id):
         self.id = id
         self.client = client
@@ -101,7 +101,7 @@ class NycOpenData:
                         col['type'] = x['dataTypeName']
 
                 col['label'] = x['name'].replace('_', ' ')
-                if x['description'] is None:
+                if x.get('description') is None:
                     col['description'] = ""
                 else:
                     col['description'] = x['description']
@@ -238,7 +238,7 @@ def config(filename='.connection-nycopen.ini',section='graphql'):
 
 def main (args):
     if len(args) == 0:
-        print ('need a file with a list of dataset id')
+        print ('args: list of dataset id, state/province, city, country')
         exit(0)
 
     ids = []
@@ -272,10 +272,10 @@ def main (args):
     for dataset_identifier in ids:
         metadata = domain_client.get_metadata(dataset_identifier)
 
-        nyc_data = NycOpenData(domain_client,metadata,dataset_identifier)
+        open_data = MyOpenData(domain_client,metadata,dataset_identifier)
 
         try:
-            schema = nyc_data.data_schema()
+            schema = open_data.data_schema()
             print (schema)
 
             server_config = config(section='ipfs')
@@ -295,7 +295,7 @@ def main (args):
 
             # publish sample
             print ('publishing sample....')
-            sample_info = nyc_data.publish_sample_data(
+            sample_info = open_data.publish_sample_data(
                                         sample_key,
                                         server_config['endpoint'],
                                         server_config['port'],
@@ -304,14 +304,17 @@ def main (args):
 
             # publish full data
             print('publishing all data....')
-            data_info = nyc_data.publish_all_data(
+            data_info = open_data.publish_all_data(
                                         data_key,
                                         server_config['endpoint'],
                                         server_config['port']
                                     )
 
             current_date_time = datetime.datetime.utcnow().strftime("%a %b %d %H:%M:%S %Y")
-            search_terms = "{" + ",".join(metadata['tags']) + "}"
+            search_terms = "{assets}"
+            if metadata.get('tags') is not None:
+                search_terms = "{" + ",".join(metadata['tags']) + "}"
+
             default_ipfs_gateway = "http://demo-app.rebloc.io:8080/ipfs/"
             default_price = 0.5
 
@@ -325,6 +328,8 @@ def main (args):
                 "description":  metadata['description'],
                 "country": "united states",
                 "state_province": "new york",
+                "city": "{new york}",
+                "topic": "{" + "building" + "}",
                 "date_created": current_date_time,
                 "date_modified": current_date_time,
                 "dataset_owner_id": ownerid,
