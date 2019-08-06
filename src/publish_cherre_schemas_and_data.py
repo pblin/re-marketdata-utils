@@ -41,9 +41,9 @@ class ReblocMarketplace:
     def post_draft_dataset(self,dataset):
         print (dataset)
         result = None
-        headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+        headers = {'Content-type': 'application/json', 'Accept': 'application/json'}
 
-        req = requests.post(self.url+'/schema',data=dataset,headers=headers,verify=False)
+        req = requests.post(self.url+'/schema',json=dataset,headers=headers,verify=False)
         print (req.status_code)
 
         if req.status_code == 200:
@@ -132,7 +132,7 @@ class CherreData:
 
         rows = cursor.fetchall()
         json_str = json.dumps(rows, indent=4, sort_keys=False, default=str)
-        result_file_name = "/tmp/%s-sample.%s.gz" % (id, output)
+        result_file_name = "/tmp/%s-sample.%s.gz" % (table_name, output)
         out_file = gzip.open(result_file_name, "wt")
 
         if output == 'csv':
@@ -156,32 +156,38 @@ class CherreData:
     # json format is not suitable for full dataset as the size could be millions of rows
     def publish_all_data(self,table_name,cypher_key,ipfs_server,ipfs_port,cols=None):
         cursor = self.connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor,name='large_dataset')
-
+        total_records = 0
         if cols is None:
             # get all columns
             query = "select * from cherre_sample_data.%s " % table_name
             print(query)
             cursor.execute(query)
+            first_row = cursor.fetchone()
+            total_records += 1
+            cols = [desc[0] for desc in cursor.description]
         else:
             select_query = "select {} from cherre_sample_data.%s " % table_name
             limit_query = sql.SQL(select_query).format(sql.SQL(', ').join(map(sql.Identifier, cols)))
             print(limit_query.as_string(self.connection))
-            cursor.execute(limit_query)
+            cursor.execute(select_query)
 
-        result_file_name = "/tmp/%s.%s.gz" % (id, "csv")
-        out_file = gzip.open(result_file_name, "wt")
-        csv_writer = csv.DictWriter(out_file, fieldnames=cols)
-        csv_writer.writeheader()
+        result_file_name = "/tmp/%s.%s.gz" % (table_name, "csv")
 
-        total_records = 0
-        while True:
-            rows = cursor.fetchmany(size=5000)
+        with  gzip.open(result_file_name, "wt") as out_file:
+            csv_writer = csv.DictWriter(out_file, fieldnames=cols)
+            csv_writer.writeheader()
+            if first_row is not None:
+                csv_writer.writerow(first_row)
 
-            if not rows:
-                break
-            total_records += len(rows)
-            for row in rows:
-                csv_writer.writerow(row)
+            while True:
+                rows = cursor.fetchmany(size=5000)
+
+                if not rows:
+                    break
+
+                total_records += len(rows)
+                for row in rows:
+                    csv_writer.writerow(row)
 
         cursor.close()
         out_file.close()
@@ -320,8 +326,17 @@ def main (args):
             default_ipfs_gateway = "http://demo-app.rebloc.io:8080/ipfs/"
             default_price = 1.0
 
-            if 0.01 * data_info['num_of_rows'] > default_price:
+            if 0.0000001 * data_info['num_of_rows'] > default_price:
                 default_price = round (0.01 * data_info['num_of_rows'],2)
+            object_name = ''
+            topic = 'building'
+
+            if table.find('acris'):
+                object_name = 'acris'
+            else:
+                object_name = table.replace('nyc_','')
+                topic = object_name
+
 
             dataset = {
                 "id": str(uuid.uuid1()),
@@ -334,7 +349,7 @@ def main (args):
                 "date_created": current_date_time,
                 "date_modified": current_date_time,
                 "dataset_owner_id": ownerid,
-                "delivery_method": "IPFS",
+                "delivery_method": "IPFS/CSV",
                 "enc_data_key": data_key.decode(),
                 "enc_sample_key": sample_key.decode(),
                 "sample_access_url": default_ipfs_gateway + sample_info['ipfs_hash'],
@@ -343,16 +358,16 @@ def main (args):
                 'data_hash': data_info['md5_file_hash'],
                 "num_of_records": data_info['num_of_rows'],
                 "search_terms": search_terms,
-                "topic": "{building}",
+                "topic": '{'+topic+'}',
                 "price_high": default_price,
                 "price_low": 0.5,
                 "stage": 3,
-                "schema": Json(schema),
+                "schema": schema,
                 "json_schema": json.dumps(schema)
             }
 
             # list draft datasets to marketplace
-            result = my_marketplace.post_draft_dataset(json.dumps(dataset))
+            result = my_marketplace.post_draft_dataset(dataset)
             print (result)
 
     except Exception as err:

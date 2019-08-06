@@ -218,7 +218,7 @@ def encrypt_file(key,in_filename,out_filename=None, chunksize=64*1024):
                 outfile.write(encryptor.encrypt(chunk))
 
 
-def config(filename='.connection-nycopen.ini',section='graphql'):
+def config(filename='.connection-cacopen.ini',section='graphql'):
     # create a parser
     parser = ConfigParser()
 
@@ -311,7 +311,7 @@ def main (args):
                                     )
 
             current_date_time = datetime.datetime.utcnow().strftime("%a %b %d %H:%M:%S %Y")
-            search_terms = "{assets}"
+            search_terms = "{property,taxes}"
             if metadata.get('tags') is not None:
                 search_terms = "{" + ",".join(metadata['tags']) + "}"
 
@@ -327,13 +327,13 @@ def main (args):
                 "table_name": metadata['id'],
                 "description":  metadata['description'],
                 "country": "united states",
-                "state_province": "new york",
-                "city": "{new york}",
-                "topic": "{" + "building" + "}",
+                "state_province": "california",
+                "city": "{san mateo}",
+                "topic": "{" + "assessment" + "}",
                 "date_created": current_date_time,
                 "date_modified": current_date_time,
                 "dataset_owner_id": ownerid,
-                "delivery_method": "IPFS",
+                "delivery_method": "IPFS/CSV",
                 "enc_data_key": data_key.decode(),
                 "enc_sample_key": sample_key.decode(),
                 "sample_access_url": default_ipfs_gateway + sample_info['ipfs_hash'],
