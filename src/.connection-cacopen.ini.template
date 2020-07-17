@@ -1,0 +1,16 @@
+[graphql]
+apitoken={apitoken}
+endpoint=http://demo-app.rebloc.io:8081/v1/graphql
+
+[rebloc]
+endpoint=https://demo-app.rebloc.io:9000
+registeremail=bernard.lin918@gmail.com
+
+[ipfs]
+endpoint=http://demo-app.rebloc.io
+port=5001
+
+[sourceapi]
+token={apitoken}
+domain=datahub.smcgov.org
+
