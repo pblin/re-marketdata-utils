@@ -177,7 +177,7 @@ regex==2019.2.7
 requests==2.21.0
 rlp==1.1.0
 rpcudp==4.0.0
-rsa==4.0
+rsa==4.7
 Rx==1.6.1
 s3transfer==0.2.0
 scikit-learn==0.20.2
