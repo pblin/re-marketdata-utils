@@ -216,7 +216,7 @@ u-msgpack-python==2.5.1
 umbral==0.1.3a0
 update==0.0.1
 uritemplate==3.0.0
-urllib3==1.24.1
+urllib3==1.26.5
 varint==1.0.2
 virtualenv==16.4.1
 watchdog==0.9.0
