@@ -5,7 +5,7 @@ apiclient==1.0.3
 appdirs==1.4.3
 appnope==0.1.0
 argh==0.26.2
-arrow==0.13.2
+arrow==0.15.1
 asn1crypto==0.24.0
 astor==0.7.1
 async-lru==0.1.0
