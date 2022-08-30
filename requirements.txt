@@ -43,7 +43,7 @@ ecdsa==0.13.2
 entrypoints==0.3
 essential-generators==0.9.2
 eth-abi==2.0.0b5
-eth-account==0.3.0
+eth-account==0.5.9
 eth-bloom==1.0.3
 eth-hash==0.2.0
 eth-keyfile==0.5.1
